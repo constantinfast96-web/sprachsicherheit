@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sprachumfrage</title>
+    <!--
+      Dies ist eine statische Umfrageseite, die speziell für die Bereitstellung
+      über GitHub Pages konzipiert ist. Um die Ergebnisse aller Besucher in
+      Echtzeit zu synchronisieren, nutzt die Seite die Firebase Realtime
+      Database. Firebase stellt eine cloudbasierte Datenbank bereit, die es
+      mehreren Clients erlaubt, gemeinsam auf Daten zuzugreifen und Änderungen
+      unmittelbar zu propagieren【203927408579846†L18-L30】. Jede Stimmabgabe
+      aktualisiert die Zähler atomar mittels `ServerValue.increment()`, sodass
+      parallele Schreibzugriffe korrekt zusammengeführt werden【203927408579846†L18-L30】.
+      Um die Seite lauffähig zu machen, müssen Sie ein eigenes Firebase‑Projekt
+      anlegen und die Konfigurationsdaten im Objekt firebaseConfig weiter unten
+      eintragen. Die kostenlose Tarifstufe reicht für das Sammeln einfacher
+      Umfragedaten vollkommen aus.
+    -->
+    <style>
+      :root {
+        --color-primary: #003d5b;
+        --color-secondary: #006494;
+        --color-accent: #0098c9;
+        --color-gray: #f5f5f5;
+        --color-light-gray: #e0e0e0;
+        --color-dark-gray: #4d4d4d;
+        --bar-a: #005b8c;
+        --bar-b: #0077aa;
+        --bar-c: #0099c5;
+        --bar-d: #b0b0b0;
+      }
+      * {
+        box-sizing: border-box;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--color-gray);
+        color: var(--color-dark-gray);
+      }
+      header {
+        background: var(--color-primary);
+        color: #ffffff;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+      }
+      header img {
+        height: 50px;
+        margin-right: 1rem;
+      }
+      header h1 {
+        font-size: 1.5rem;
+        margin: 0;
+      }
+      main {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 1rem;
+        background: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      h2 {
+        margin-top: 0;
+        color: var(--color-primary);
+        font-size: 1.3rem;
+      }
+      form {
+        margin-bottom: 1.5rem;
+      }
+      .option {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
+        border: 1px solid var(--color-light-gray);
+        border-radius: 4px;
+        transition: background 0.2s;
+      }
+      .option:hover {
+        background: var(--color-gray);
+      }
+      .option input[type="radio"] {
+        margin-right: 0.75rem;
+        margin-top: 0.1rem;
+      }
+      .option label {
+        flex: 1;
+        cursor: pointer;
+      }
+      button[type="submit"] {
+        background: var(--color-secondary);
+        color: #ffffff;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        font-size: 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      button[type="submit"]:hover {
+        background: var(--color-primary);
+      }
+      button[type="submit"]:disabled {
+        background: #cccccc;
+        cursor: default;
+      }
+      /* Chart styles */
+      #chart {
+        display: none;
+      }
+      .bar-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+      }
+      .bar-label {
+        flex: 0 0 45px;
+        font-weight: bold;
+        color: var(--color-primary);
+      }
+      .bar-container {
+        flex: 1;
+        background: var(--color-light-gray);
+        border-radius: 4px;
+        overflow: hidden;
+        height: 24px;
+        margin-right: 0.5rem;
+      }
+      .bar {
+        height: 100%;
+        width: 0;
+        transition: width 0.5s;
+      }
+      .bar-count {
+        min-width: 30px;
+        text-align: right;
+        font-weight: bold;
+        color: var(--color-dark-gray);
+      }
+      .notice {
+        font-size: 0.9rem;
+        color: var(--color-dark-gray);
+        margin-top: 1rem;
+      }
+    </style>
+    <!-- Firebase JS SDKs. Die Compat-Version erlaubt die Verwendung der
+         Namespace-basierten API (firebase.*). Die in Ihrem Projekt
+         verwendete Version kann aktualisiert werden, solange die URLs
+         angepasst werden. -->
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+  </head>
+  <body>
+    <header>
+      <img src="logo.jpg" alt="goFLUENT Logo" />
+      <h1>Sprachumfrage</h1>
+    </header>
+    <main>
+      <h2>Wie sicher fühlen Sie sich, wenn Sie in der Sprache sprechen, die Sie lernen?</h2>
+      <form id="voteForm">
+        <div class="option">
+          <input type="radio" id="optionA" name="answer" value="A" required />
+          <label for="optionA">
+            A. Ich fühle mich sehr sicher und spreche die Sprache gerne. Ich bin recht
+            selbstbewusst und führe gerne kurze Gespräche.
+          </label>
+        </div>
+        <div class="option">
+          <input type="radio" id="optionB" name="answer" value="B" />
+          <label for="optionB">
+            B. Ich fühle mich etwas unsicher, bin aber bereit, es zu versuchen.
+          </label>
+        </div>
+        <div class="option">
+          <input type="radio" id="optionC" name="answer" value="C" />
+          <label for="optionC">
+            C. Ich bin sehr unsicher und vermeide es möglichst.
+          </label>
+        </div>
+        <div class="option">
+          <input type="radio" id="optionD" name="answer" value="D" />
+          <label for="optionD">
+            D. Sonstiges (bitte im Chat angeben).
+          </label>
+        </div>
+        <button type="submit" id="submitBtn">Antwort absenden</button>
+      </form>
+      <div id="chart">
+        <h2>Aktuelles Ergebnis</h2>
+        <div class="bar-row">
+          <span class="bar-label">A</span>
+          <div class="bar-container">
+            <div class="bar" id="barA" style="background: var(--bar-a);"></div>
+          </div>
+          <span class="bar-count" id="countA">0</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">B</span>
+          <div class="bar-container">
+            <div class="bar" id="barB" style="background: var(--bar-b);"></div>
+          </div>
+          <span class="bar-count" id="countB">0</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">C</span>
+          <div class="bar-container">
+            <div class="bar" id="barC" style="background: var(--bar-c);"></div>
+          </div>
+          <span class="bar-count" id="countC">0</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">D</span>
+          <div class="bar-container">
+            <div class="bar" id="barD" style="background: var(--bar-d);"></div>
+          </div>
+          <span class="bar-count" id="countD">0</span>
+        </div>
+      </div>
+      <p class="notice">
+        Hinweis: Um diese Umfrage zu verwenden, müssen Sie Ihre eigenen Firebase‑Konfigurationsdaten im Skript unten eintragen. Ohne diese Angaben können keine Stimmen gespeichert oder abgerufen werden.
+      </p>
+    </main>
+    <!-- Client‑seitige Logik -->
+    <script src="script.js"></script>
+  </body>
+</html>
